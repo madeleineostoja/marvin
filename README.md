@@ -68,8 +68,8 @@ Create a `marvin.json` in your workspace root:
   "preflight": "tsc --noEmit",
   "models": {
     "orchestrator": "opus",
-    "builder": "sonnet",
-    "reviewer": "opus"
+    "build": "sonnet",
+    "review": "opus"
   },
   "sandbox": {
     "enabled": true,
@@ -78,14 +78,14 @@ Create a `marvin.json` in your workspace root:
 }
 ```
 
-| Field           | Description                                                                                                                                                                                                                                                     |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `harness`       | Which AI CLI to drive — `claude` (Claude Code) or `opencode`                                                                                                                                                                                                    |
-| `plan`          | Path to the plan file                                                                                                                                                                                                                                           |
-| `maxIterations` | Safety limit on loop iterations.                                                                                                                                                                                                                                |
-| `preflight`     | Shell command to run before starting (e.g. type-check). Fails fast if it errors — Marvin appreciates not wasting time on a doomed codebase.                                                                                                                     |
-| `models`        | Model IDs for each agent. Values are passed directly to the harness — use short names for Claude Code (`opus`, `sonnet`) or provider-prefixed IDs for opencode (`anthropic/claude-opus-4-6`). Defaults: orchestrator `opus`, builder `sonnet`, reviewer `opus`. |
-| `sandbox`       | Filesystem and network sandboxing. Restricts write access and network to listed domains.                                                                                                                                                                        |
+| Field           | Description                                                                                                                                                                                                                                                 |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `harness`       | Which AI CLI to drive — `claude` (Claude Code) or `opencode`                                                                                                                                                                                                |
+| `plan`          | Path to the plan file                                                                                                                                                                                                                                       |
+| `maxIterations` | Safety limit on loop iterations.                                                                                                                                                                                                                            |
+| `preflight`     | Shell command to run before starting (e.g. type-check). Fails fast if it errors — Marvin appreciates not wasting time on a doomed codebase.                                                                                                                 |
+| `models`        | Model IDs for each agent. Values are passed directly to the harness — use short names for Claude Code (`opus`, `sonnet`) or provider-prefixed IDs for opencode (`anthropic/claude-opus-4-6`). Defaults: orchestrator `opus`, build `sonnet`, review `opus`. |
+| `sandbox`       | Filesystem and network sandboxing. Restricts write access and network to listed domains.                                                                                                                                                                    |
 
 ### Plan files
 

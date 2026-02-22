@@ -34,7 +34,7 @@ The ${BUILD_AGENT} agent gets a fresh context window and knows nothing except wh
 1. The task description
 2. The full spec content (paste it, don't just reference a path)
 3. Skill loading instructions if applicable
-4. Reviewer feedback if this is a retry after rejection (verbatim)
+4. ${REVIEW_AGENT} feedback if this is a retry after rejection (verbatim)
 5. On retries: include \`git diff HEAD --stat\` output so the ${BUILD_AGENT} agent knows what files are already changed on disk
 
 Delegate complete units of work, not individual steps. Do not split implementation and validation into separate ${BUILD_AGENT} agent calls. If re-delegating after incomplete results, include the remaining work AND the validation requirement in a single delegation — do not micro-manage the ${BUILD_AGENT} agent through sequential narrow calls.
@@ -71,7 +71,7 @@ Compare the new review findings against the prior review (if any). Did the ${BUI
 
 Maximum 3 genuine rejections (where the ${BUILD_AGENT} agent fails to make progress). After 3, mark the task BLOCKED with a note and exit.
 
-On retry: restore the plan file to its pre-iteration state (un-mark the task if the ${BUILD_AGENT} agent marked it). Code changes stay on disk. Return to Phase 4 with the reviewer's feedback.
+On retry: restore the plan file to its pre-iteration state (un-mark the task if the ${BUILD_AGENT} agent marked it). Code changes stay on disk. Return to Phase 4 with the review's feedback.
 
 **Inconclusive** (ambiguous, errored, or no clear verdict):
 
@@ -129,7 +129,7 @@ export function claudeAgents(models) {
         [BUILD_AGENT]: {
             description: "Implementation specialist. Delegate to this agent for coding tasks.",
             prompt: BUILD_PROMPT,
-            model: models.builder,
+            model: models.build,
             disallowedTools: [
                 "Bash(git commit *)",
                 "Bash(git push *)",
@@ -141,9 +141,9 @@ export function claudeAgents(models) {
             ],
         },
         [REVIEW_AGENT]: {
-            description: "Reviewer subagent for Marvin. Reviews diffs against specs.",
+            description: "Review subagent for Marvin. Reviews diffs against specs.",
             prompt: REVIEW_PROMPT,
-            model: models.reviewer,
+            model: models.review,
             tools: [
                 "Read",
                 "Grep",
@@ -165,13 +165,13 @@ export function opencodeAgentOverrides(models) {
                 prompt: ORCHESTRATOR_PROMPT,
             },
             [BUILD_AGENT]: {
-                model: models.builder,
+                model: models.build,
                 mode: "subagent",
                 hidden: true,
                 prompt: BUILD_PROMPT,
             },
             [REVIEW_AGENT]: {
-                model: models.reviewer,
+                model: models.review,
                 mode: "subagent",
                 hidden: true,
                 prompt: REVIEW_PROMPT,

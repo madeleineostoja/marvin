@@ -7,7 +7,14 @@ export type ToolMetadata = {
 
 export type StreamEvent =
   | { type: "text"; text: string; timestamp: number }
-  | { type: "tool"; tool: string; status: string; input?: Record<string, unknown>; metadata?: ToolMetadata; timestamp: number };
+  | {
+      type: "tool";
+      tool: string;
+      status: string;
+      input?: Record<string, unknown>;
+      metadata?: ToolMetadata;
+      timestamp: number;
+    };
 
 export type InvocationHandle = {
   pid: number | undefined;
@@ -20,8 +27,8 @@ export type HarnessConfig = {
   planFile: string;
   models: {
     orchestrator: string;
-    builder: string;
-    reviewer: string;
+    build: string;
+    review: string;
   };
   sandbox: {
     enabled: boolean;
@@ -31,5 +38,9 @@ export type HarnessConfig = {
 
 export type Harness = {
   name: string;
-  invoke(config: HarnessConfig, iteration: number, signal: AbortSignal): InvocationHandle;
+  invoke(
+    config: HarnessConfig,
+    iteration: number,
+    signal: AbortSignal,
+  ): InvocationHandle;
 };

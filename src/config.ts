@@ -4,8 +4,8 @@ import { z } from "zod";
 
 export const ModelsSchema = z.object({
   orchestrator: z.string().default("opus"),
-  builder: z.string().default("sonnet"),
-  reviewer: z.string().default("opus"),
+  build: z.string().default("sonnet"),
+  review: z.string().default("opus"),
 });
 
 export type ModelsConfig = z.infer<typeof ModelsSchema>;
@@ -15,11 +15,17 @@ export const MarvinConfigSchema = z.object({
   plan: z.string().optional(),
   maxIterations: z.number().default(50),
   preflight: z.string().nullable().optional(),
-  models: ModelsSchema.default({ orchestrator: "opus", builder: "sonnet", reviewer: "opus" }),
-  sandbox: z.object({
-    enabled: z.boolean().default(true),
-    domains: z.array(z.string()).default([]),
-  }).default({ enabled: true, domains: [] }),
+  models: ModelsSchema.default({
+    orchestrator: "opus",
+    build: "sonnet",
+    review: "opus",
+  }),
+  sandbox: z
+    .object({
+      enabled: z.boolean().default(true),
+      domains: z.array(z.string()).default([]),
+    })
+    .default({ enabled: true, domains: [] }),
 });
 
 export type MarvinConfig = z.infer<typeof MarvinConfigSchema>;

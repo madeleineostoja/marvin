@@ -129,7 +129,7 @@ export const personality = {
     ],
     delegating: [
       "Delegating to someone less depressed...",
-      "Asking the builder, who doesn't know how lucky it is...",
+      "Asking the build, who doesn't know how lucky it is...",
       "Handing this off. Not my problem for 30 seconds...",
       "Spawning a subagent. Misery loves company...",
       "Delegating. At least someone will be busy...",
@@ -195,7 +195,7 @@ export const personality = {
     "I'm not surprised. I'm never surprised.",
     "Would it help if I just sat in a corner and rusted?",
     "The code remains unmoved. Much like my will to continue.",
-    "The builder did nothing. I relate to this on a deep level.",
+    "The build did nothing. I relate to this on a deep level.",
   ],
 
   shutdown: [
