@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env -S node --experimental-strip-types --experimental-transform-types
 import { parseArgs } from "node:util";
 import { styleText } from "node:util";
 import { resolve } from "node:path";
@@ -29,7 +29,10 @@ const planFile = values.plan ?? positionals[0];
 
 if (values.harness && !["claude", "opencode"].includes(values.harness)) {
   console.error(
-    styleText("red", `Unknown harness: ${values.harness}. Must be "claude" or "opencode".`),
+    styleText(
+      "red",
+      `Unknown harness: ${values.harness}. Must be "claude" or "opencode".`,
+    ),
   );
   process.exit(1);
 }
@@ -38,7 +41,10 @@ if (values["max-iterations"] !== undefined) {
   const n = parseInt(values["max-iterations"], 10);
   if (!Number.isFinite(n) || n <= 0) {
     console.error(
-      styleText("red", `Invalid --max-iterations: ${values["max-iterations"]}. Must be a positive integer.`),
+      styleText(
+        "red",
+        `Invalid --max-iterations: ${values["max-iterations"]}. Must be a positive integer.`,
+      ),
     );
     process.exit(1);
   }
