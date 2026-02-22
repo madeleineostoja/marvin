@@ -7,7 +7,6 @@ async function* parseStream(proc) {
         return;
     }
     const rl = createInterface({ input: proc.all, crlfDelay: Infinity });
-    let current = null;
     for await (const line of rl) {
         if (!line.trim()) {
             continue;
@@ -20,70 +19,35 @@ async function* parseStream(proc) {
             yield { type: "stderr", text: line, timestamp: Date.now() };
             continue;
         }
-        if (parsed["type"] !== "stream_event") {
-            continue;
-        }
-        const event = parsed["event"];
-        if (!event) {
-            continue;
-        }
-        const eventType = event["type"];
-        if (eventType === "content_block_start") {
-            const block = event["content_block"];
-            if (!block) {
+        const lineType = parsed["type"];
+        if (lineType === "assistant") {
+            const message = parsed["message"];
+            const content = message?.["content"];
+            if (!content) {
                 continue;
             }
-            const blockType = block["type"];
-            if (blockType === "text") {
-                current = { type: "text", text: "" };
-            }
-            else if (blockType === "tool_use") {
-                current = {
-                    type: "tool_use",
-                    name: block["name"],
-                    inputJson: "",
-                };
-            }
-        }
-        else if (eventType === "content_block_delta") {
-            const delta = event["delta"];
-            if (!delta || !current) {
-                continue;
-            }
-            const deltaType = delta["type"];
-            if (deltaType === "text_delta" && current.type === "text") {
-                current.text += delta["text"];
-            }
-            else if (deltaType === "input_json_delta" &&
-                current.type === "tool_use") {
-                current.inputJson += delta["partial_json"];
-            }
-        }
-        else if (eventType === "content_block_stop") {
-            if (!current) {
-                continue;
-            }
-            if (current.type === "text") {
-                yield { type: "text", text: current.text, timestamp: Date.now() };
-            }
-            else if (current.type === "tool_use") {
-                let input = {};
-                try {
-                    input = JSON.parse(current.inputJson || "{}");
+            for (const block of content) {
+                const blockType = block["type"];
+                if (blockType === "text") {
+                    const text = block["text"];
+                    if (text) {
+                        yield { type: "text", text, timestamp: Date.now() };
+                    }
                 }
-                catch {
-                    input = {};
+                else if (blockType === "tool_use") {
+                    const name = block["name"].toLowerCase();
+                    const input = block["input"] ?? {};
+                    yield {
+                        type: "tool",
+                        tool: name,
+                        status: "completed",
+                        input,
+                        timestamp: Date.now(),
+                    };
                 }
-                yield {
-                    type: "tool",
-                    tool: current.name,
-                    status: "completed",
-                    input,
-                    timestamp: Date.now(),
-                };
             }
-            current = null;
         }
+        // Ignore "system", "rate_limit_event", "result", "user", and other event types
     }
 }
 export function createClaudeHarness() {
@@ -92,7 +56,6 @@ export function createClaudeHarness() {
         invoke(config, _iteration, signal) {
             const args = [
                 "--print",
-                "--verbose",
                 "--output-format",
                 "stream-json",
                 "--dangerously-skip-permissions",

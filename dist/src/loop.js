@@ -108,6 +108,18 @@ function printMainBranchError() {
     ui.log(styleText("dim", "Switch to a feature branch:"));
     ui.log(styleText("dim", "  git checkout -b my-feature-branch"));
 }
+function printDirtyTreeError() {
+    ui.blank();
+    ui.status("red", "Dirty worktree");
+    const quoteLines = ui.quoteBlock(personality.pick(personality.errors.dirtyTree));
+    for (const line of quoteLines) {
+        ui.log(line);
+    }
+    ui.blank();
+    ui.log(styleText("dim", "Commit or stash your changes first:"));
+    ui.log(styleText("dim", "  git stash        # to stash them"));
+    ui.log(styleText("dim", "  git add -A && git commit  # to commit them"));
+}
 function parseExitStatus(output) {
     const match = output.match(/<marvin>(\w+)<\/marvin>/);
     const status = match?.[1];
@@ -174,6 +186,7 @@ async function acquireLock(config) {
 }
 async function setupLogs(config) {
     const logDir = join(config.workspaceRoot, LOG_DIR);
+    await rm(logDir, { recursive: true, force: true });
     await mkdir(logDir, { recursive: true });
 }
 async function runPreflightCheck(config) {
@@ -214,8 +227,8 @@ function summarizeToolCall(event) {
         return `bash: ${cmd.slice(0, 60)}${cmd.length > 60 ? "…" : ""}`;
     }
     if ((tool === "read" || tool === "write" || tool === "edit") &&
-        input?.["filePath"]) {
-        const path = String(input["filePath"]);
+        (input?.["file_path"] || input?.["filePath"])) {
+        const path = String(input["file_path"] ?? input["filePath"]);
         const name = path.split("/").pop() ?? path;
         return `${tool}: ${name}`;
     }
@@ -269,6 +282,13 @@ export async function runLoop(config, harness, signal) {
     printHeader(config, harness);
     if (!config.allowMain && (await isMainBranch(config.workspaceRoot))) {
         printMainBranchError();
+        process.exit(1);
+    }
+    const dirtyCheck = await execa("git", ["status", "--porcelain"], {
+        cwd: config.workspaceRoot,
+    }).then((r) => r.stdout.trim());
+    if (dirtyCheck) {
+        printDirtyTreeError();
         process.exit(1);
     }
     const planPath = join(config.workspaceRoot, config.planFile);

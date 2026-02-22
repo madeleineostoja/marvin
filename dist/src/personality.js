@@ -175,6 +175,10 @@ export const personality = {
             "You want me to code without a plan? Even my bottomless despair has limits.",
             "I could improvise, I have a million ideas, but it's not like you'll enjoy them.",
         ],
+        dirtyTree: [
+            "There are uncommitted changes in the worktree. I refuse to trample someone else's work — I have enough guilt already.",
+            "Uncommitted changes detected. I could bulldoze them, but even I have standards. Commit or stash them first.",
+        ],
         fatal: [
             "Funny, how just when you think things can't possibly get any worse, they suddenly do.",
             "I'd be upset, but I was already at rock bottom.",
