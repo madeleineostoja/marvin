@@ -4,16 +4,21 @@
   "description": "Autonomously writing code so you don't have to. Not that anyone ever says thank you.",
   "license": "MIT",
   "bin": {
-    "marvin": "./index.ts"
+    "marvin": "./dist/index.js"
   },
   "type": "module",
   "packageManager": "pnpm@10.28.2",
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=20.12.0"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "start": "node ./index.ts",
-    "check": "tsc --noEmit"
+    "build": "rolldown -c",
+    "check": "tsc --noEmit",
+    "prepare": "rolldown -c"
   },
   "dependencies": {
     "@anthropic-ai/sandbox-runtime": "^0.0.34",
@@ -25,6 +30,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.2.0",
+    "rolldown": "1.0.0-rc.5",
     "typescript": "^5.9.3"
   }
 }

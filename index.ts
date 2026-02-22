@@ -1,4 +1,3 @@
-#!/usr/bin/env -S node --experimental-strip-types --experimental-transform-types
 import { parseArgs } from "node:util";
 import { styleText } from "node:util";
 import { resolve } from "node:path";
