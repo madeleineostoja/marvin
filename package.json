@@ -17,7 +17,8 @@
   "scripts": {
     "start": "node ./index.ts",
     "build": "tsc -p tsconfig.build.json",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "test": "node ./test/test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sandbox-runtime": "^0.0.34",
