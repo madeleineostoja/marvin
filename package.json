@@ -1,0 +1,30 @@
+{
+  "name": "marvin",
+  "version": "0.0.0",
+  "description": "Autonomously writing code so you don't have to. Not that anyone ever says thank you.",
+  "license": "MIT",
+  "bin": {
+    "marvin": "./index.ts"
+  },
+  "type": "module",
+  "packageManager": "pnpm@10.28.2",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "start": "node ./index.ts",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sandbox-runtime": "^0.0.34",
+    "execa": "^9.6.1",
+    "string-width": "^8.1.1",
+    "wrap-ansi": "^9.0.2",
+    "yocto-spinner": "^1.1.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "typescript": "^5.9.3"
+  }
+}
