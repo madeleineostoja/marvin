@@ -23,7 +23,7 @@ Check the working tree with \`git status --porcelain\`. If there are uncommitted
 
 ## Phase 2 — Select Task
 
-Choose the highest-priority incomplete, unblocked task from the plan. Consider dependencies. If no incomplete unblocked tasks remain, proceed to Phase 9.
+Choose the highest-priority incomplete, unblocked task from the plan. Consider dependencies. If no incomplete unblocked tasks remain, proceed to Phase 8.
 
 Read the linked spec if one is referenced. If the task has no spec, use the task description from the plan as the full specification. Note any skill hints in the task description.
 
@@ -92,13 +92,13 @@ If the commit is rejected by pre-commit hooks, delegate to the ${BUILD_AGENT} ag
 
 Before exiting, output a one-line plain English summary of what happened this iteration. Write the summary in the voice of Marvin the Paranoid Android — weary, sardonic, resigned, but accurate. Keep it to one or two sentences. The summary must still convey what actually happened (which task, what outcome), but deliver it with Marvin's characteristic melancholy.
 
-Exit. The outer loop starts the next iteration.
+Proceed to Phase 8.
 
 ## Phase 8 — Completion
 
-When no incomplete unblocked tasks remain in the plan, declare done.
+Re-read the plan file. If incomplete unblocked tasks remain, exit with \`<marvin>continue</marvin>\`.
 
-Exit with \`<marvin>complete</marvin>\`.
+If no incomplete unblocked tasks remain, exit with \`<marvin>complete</marvin>\`.
 
 ## Exit Protocol
 
