@@ -7,7 +7,6 @@
     "marvin": "./dist/index.js"
   },
   "type": "module",
-  "packageManager": "pnpm@10.28.2",
   "engines": {
     "node": ">=20.12.0"
   },
