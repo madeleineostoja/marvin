@@ -238,7 +238,7 @@ export function createOpencodeHarness() {
                             }
                         }
                         catch {
-                            // Not JSON, ignore
+                            pushEvent({ type: "stderr", text: line, timestamp: Date.now() });
                         }
                     }
                 }

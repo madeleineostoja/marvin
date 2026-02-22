@@ -17,6 +17,7 @@ async function* parseStream(proc) {
             parsed = JSON.parse(line);
         }
         catch {
+            yield { type: "stderr", text: line, timestamp: Date.now() };
             continue;
         }
         if (parsed["type"] !== "stream_event") {
@@ -97,7 +98,7 @@ export function createClaudeHarness() {
                 "--no-session-persistence",
                 "--model",
                 config.models.orchestrator,
-                "--system-prompt",
+                "--append-system-prompt",
                 ORCHESTRATOR_PROMPT,
                 "--agents",
                 JSON.stringify(claudeAgents(config.models)),

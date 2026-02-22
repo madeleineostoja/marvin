@@ -365,7 +365,11 @@ export async function runLoop(config, harness, signal) {
                     s.text = personality.pick(personalityLines);
                 }
                 for await (const event of handle.events) {
-                    if (event.type === "text") {
+                    if (event.type === "stderr") {
+                        logLines.push(`[stderr] ${event.text}`);
+                        continue;
+                    }
+                    else if (event.type === "text") {
                         textParts.push(event.text);
                         const text = event.text.trim();
                         if (text) {

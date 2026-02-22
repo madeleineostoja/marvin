@@ -469,7 +469,10 @@ export async function runLoop(
         }
 
         for await (const event of handle.events) {
-          if (event.type === "text") {
+          if (event.type === "stderr") {
+            logLines.push(`[stderr] ${event.text}`);
+            continue;
+          } else if (event.type === "text") {
             textParts.push(event.text);
             const text = event.text.trim();
             if (text) {

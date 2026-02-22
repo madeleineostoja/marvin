@@ -320,7 +320,7 @@ export function createOpencodeHarness(): Harness {
                 });
               }
             } catch {
-              // Not JSON, ignore
+              pushEvent({ type: "stderr", text: line, timestamp: Date.now() });
             }
           }
         }

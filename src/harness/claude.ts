@@ -35,6 +35,7 @@ async function* parseStream(
     try {
       parsed = JSON.parse(line);
     } catch {
+      yield { type: "stderr", text: line, timestamp: Date.now() } as const;
       continue;
     }
 
@@ -122,7 +123,7 @@ export function createClaudeHarness(): Harness {
         "--no-session-persistence",
         "--model",
         config.models.orchestrator,
-        "--system-prompt",
+        "--append-system-prompt",
         ORCHESTRATOR_PROMPT,
         "--agents",
         JSON.stringify(claudeAgents(config.models)),

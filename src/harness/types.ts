@@ -14,7 +14,8 @@ export type StreamEvent =
       input?: Record<string, unknown>;
       metadata?: ToolMetadata;
       timestamp: number;
-    };
+    }
+  | { type: "stderr"; text: string; timestamp: number };
 
 export type InvocationHandle = {
   pid: number | undefined;
