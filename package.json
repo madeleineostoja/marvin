@@ -16,14 +16,13 @@
   ],
   "scripts": {
     "start": "node ./index.ts",
-    "build": "rolldown -c",
+    "build": "tsc -p tsconfig.build.json",
     "check": "tsc --noEmit",
-    "prepare": "npx rolldown -c"
+    "prepare": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
     "@anthropic-ai/sandbox-runtime": "^0.0.34",
     "execa": "^9.6.1",
-    "rolldown": "1.0.0-rc.5",
     "string-width": "^8.1.1",
     "wrap-ansi": "^9.0.2",
     "yocto-spinner": "^1.1.0",
