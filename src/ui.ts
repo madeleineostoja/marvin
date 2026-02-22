@@ -120,3 +120,7 @@ export function sideBySide(
 export function detail(text: string): void {
   log(styleText("dim", text));
 }
+
+export function subDetail(text: string): void {
+  log(styleText("gray", `  ${text}`));
+}

@@ -5,14 +5,32 @@ export type ToolMetadata = {
   error?: string;
 };
 
+export type AgentInfo = {
+  agent: string;
+  model: string;
+};
+
+export type ModelUsageEntry = {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheCreationTokens: number;
+};
+
 export type StreamEvent =
-  | { type: "text"; text: string; timestamp: number }
+  | { type: "text"; text: string; timestamp: number; agentInfo?: AgentInfo }
   | {
       type: "tool";
       tool: string;
       status: string;
       input?: Record<string, unknown>;
       metadata?: ToolMetadata;
+      timestamp: number;
+      agentInfo?: AgentInfo;
+    }
+  | {
+      type: "summary";
+      modelUsage: Record<string, ModelUsageEntry>;
       timestamp: number;
     }
   | { type: "stderr"; text: string; timestamp: number };
