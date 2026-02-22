@@ -32,7 +32,7 @@ CRITICAL: Do not write or edit any code yourself, all work must be done by the $
 
 The ${BUILD_AGENT} agent gets a fresh context window and knows nothing except what you tell it. Include:
 
-1. The full task description from the plan (the build agent will read any referenced spec files itself)
+1. The full task description from the plan, including spec file paths if the task references any (do not read spec files yourself — the ${BUILD_AGENT} agent will read them)
 2. ${REVIEW_AGENT} feedback if this is a retry after rejection (verbatim)
 3. On retries: include \`git diff HEAD --stat\` output so the ${BUILD_AGENT} agent knows what files are already changed on disk
 
@@ -48,9 +48,9 @@ Check for changes with \`git diff HEAD --stat\`. If empty:
 - If the ${BUILD_AGENT} agent believes the work is already done, verify it
 - If the work is not complete, reformulate the task description with more specific guidance and re-delegate to the ${BUILD_AGENT} agent once. If still empty after one retry, exit without updating the plan.
 
-If there are changes, verify the ${BUILD_AGENT} agent's response includes results for validation steps run against the **final** state of the changes (not an earlier intermediate state). If any validation step is missing, was run before subsequent code changes, or was not run at all, re-delegate to the ${BUILD_AGENT} agent: "Your validation is incomplete. Run validation in affected packages against your final changes and report the results." Only proceed to review once all validation steps have passed on the final state.
+If there are changes, read the ${BUILD_AGENT} agent's text response and confirm it includes passing validation output run against the **final** state of the changes (not an earlier intermediate state). Do not run validation yourself — that is the ${BUILD_AGENT} agent's responsibility. If validation output is missing from the response, was run before subsequent code changes, or was not run at all, re-delegate to the ${BUILD_AGENT} agent: "Your validation is incomplete. Run validation in affected packages against your final changes and report the results." Only proceed to review once the ${BUILD_AGENT} agent's response shows all validation steps passing on the final state.
 
-Then delegate to ${REVIEW_AGENT} agent with the task description from the plan. The review agent will read any referenced specs and check the git diff itself.
+Then delegate to ${REVIEW_AGENT} agent with the task description from the plan (including spec file paths if the task references any) and the \`git diff HEAD --stat\` output so it knows which files changed. Do not read spec files yourself — the review agent will read them.
 CRITICAL: Do not review any code or acceptance criteria yourself, always delegate to ${REVIEW_AGENT} agent.
 
 On a retry review (after the ${BUILD_AGENT} agent addressed prior feedback), also include the prior review and instruct ${REVIEW_AGENT}: "The ${BUILD_AGENT} agent has attempted to address your prior feedback. Focus on verifying those specific fixes. You may flag genuinely new issues you missed before, but do not revisit areas you previously found acceptable."
@@ -107,7 +107,7 @@ export const BUILD_PROMPT = `Implement the task described in your prompt.
 
 ## Approach
 
-Read relevant existing code before modifying it — understand the context, patterns, and conventions already in use. Implement exactly what's asked; do not refactor surrounding code or make unrelated improvements.
+First, read any spec files referenced in the task description — these contain the detailed requirements. Then read relevant existing code before modifying it — understand the context, patterns, and conventions already in use. Implement exactly what's asked; do not refactor surrounding code or make unrelated improvements.
 
 ## Validation
 
@@ -119,13 +119,13 @@ export const REVIEW_PROMPT = `You review code changes for quality and correctnes
 
 ## Process
 
-1. Read the task description (and any referenced spec) provided in your prompt
-2. Run \`git diff HEAD\` to see the changes
+1. Read any spec files referenced in the task description — these contain the detailed requirements and acceptance criteria
+2. Read the changed files listed in your prompt to review the implementation
 3. Read surrounding code as needed for context
 
 ## Guidelines
 
-- Verify the implementation satisfies the task's acceptance criteria — check for missing or incomplete requirements
+- Verify the implementation satisfies the task's requirements — check for missing or incomplete work
 - Review for correctness, security, and robustness using your own judgement
 - Flag scope creep — unnecessary changes or modifications to unrelated code
 - Don't nitpick style if it matches existing patterns
@@ -142,15 +142,7 @@ export function claudeAgents(models: ModelsConfig): Record<string, unknown> {
         "Implementation specialist. Delegate to this agent for coding tasks.",
       prompt: BUILD_PROMPT,
       model: models.build,
-      disallowedTools: [
-        "Bash(git commit *)",
-        "Bash(git push *)",
-        "Bash(git checkout *)",
-        "Bash(git reset *)",
-        "Bash(git rebase *)",
-        "Bash(git merge *)",
-        "Bash(git branch -D *)",
-      ],
+      disallowedTools: ["Bash(git *)"],
     },
     [REVIEW_AGENT]: {
       description: "Code review specialist. Reviews diffs for quality, correctness, and acceptance criteria.",
@@ -160,9 +152,6 @@ export function claudeAgents(models: ModelsConfig): Record<string, unknown> {
         "Read",
         "Grep",
         "Glob",
-        "Bash(git diff *)",
-        "Bash(git log *)",
-        "Bash(git show *)",
       ],
     },
   };
