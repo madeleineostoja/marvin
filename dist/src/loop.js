@@ -430,6 +430,23 @@ export async function runLoop(config, harness, signal) {
                 exitReason = "blocked";
                 break;
             }
+            const exitStatus = parseExitStatus(result.output);
+            if (exitStatus === "complete") {
+                ui.blank();
+                ui.status("green", "All tasks completed");
+                exitReason = "completed";
+                break;
+            }
+            if (exitStatus === "blocked") {
+                ui.blank();
+                ui.status("yellow", "Blocked");
+                const quoteLines = ui.quoteBlock(personality.pick(personality.summary.blocked));
+                for (const line of quoteLines) {
+                    ui.log(line);
+                }
+                exitReason = "blocked";
+                break;
+            }
             if (beforeHash === afterHash) {
                 ctx.stallCount++;
                 ui.blank();
@@ -450,23 +467,6 @@ export async function runLoop(config, harness, signal) {
                     ui.log(line);
                 }
                 exitReason = "stalled";
-                break;
-            }
-            const exitStatus = parseExitStatus(result.output);
-            if (exitStatus === "complete") {
-                ui.blank();
-                ui.status("green", "All tasks completed");
-                exitReason = "completed";
-                break;
-            }
-            if (exitStatus === "blocked") {
-                ui.blank();
-                ui.status("yellow", "Blocked");
-                const quoteLines = ui.quoteBlock(personality.pick(personality.summary.blocked));
-                for (const line of quoteLines) {
-                    ui.log(line);
-                }
-                exitReason = "blocked";
                 break;
             }
         }
