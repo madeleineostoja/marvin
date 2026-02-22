@@ -7,6 +7,7 @@
     "marvin": "./dist/index.js"
   },
   "type": "module",
+  "packageManager": "pnpm@10.28.2",
   "engines": {
     "node": ">=20.12.0"
   },
@@ -25,10 +26,10 @@
     "string-width": "^8.1.1",
     "wrap-ansi": "^9.0.2",
     "yocto-spinner": "^1.1.0",
+    "typescript": "^5.9.3",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^25.2.0",
-    "typescript": "^5.9.3"
+    "@types/node": "^25.2.0"
   }
 }
