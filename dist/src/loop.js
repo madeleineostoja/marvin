@@ -10,57 +10,12 @@ import yoctoSpinner from "yocto-spinner";
 import { MarvinConfigSchema } from "./config.js";
 import { personality } from "./personality.js";
 import * as ui from "./ui.js";
-function killProcessGroup(pid, signal) {
-    try {
-        process.kill(-pid, signal);
-    }
-    catch (error) {
-        if (error.code !== "ESRCH") {
-            throw error;
-        }
-    }
-}
-function killProcessTree(pid, signal) {
-    const descendants = [];
-    const collect = (parentPid) => {
-        try {
-            const stdout = execSync(`pgrep -P ${parentPid}`, {
-                encoding: "utf8",
-                timeout: 2000,
-                stdio: ["pipe", "pipe", "pipe"],
-            });
-            for (const line of stdout.trim().split("\n")) {
-                const childPid = parseInt(line, 10);
-                if (!isNaN(childPid)) {
-                    collect(childPid);
-                    descendants.push(childPid);
-                }
-            }
-        }
-        catch {
-            // pgrep exits 1 when no children found
-        }
-    };
-    collect(pid);
-    descendants.push(pid);
-    for (const p of descendants) {
-        try {
-            process.kill(p, signal);
-        }
-        catch {
-            // ESRCH: already dead
-        }
-    }
-}
 async function cleanupIteration(pid) {
     if (!pid) {
         return;
     }
-    killProcessGroup(pid, "SIGTERM");
-    await new Promise((r) => setTimeout(r, 3000));
-    killProcessGroup(pid, "SIGKILL");
-    await new Promise((r) => setTimeout(r, 500));
-    // Verify nothing survived — sweep for setsid escapees (e.g. Playwright browsers)
+    // execa handles SIGTERM → SIGKILL via cancelSignal + forceKillAfterDelay.
+    // Just sweep for any setsid escapees (e.g. Playwright browsers).
     try {
         const survivors = execSync(`pgrep -g ${pid}`, {
             encoding: "utf8",
@@ -68,7 +23,17 @@ async function cleanupIteration(pid) {
             stdio: ["pipe", "pipe", "pipe"],
         }).trim();
         if (survivors) {
-            killProcessTree(pid, "SIGKILL");
+            for (const line of survivors.split("\n")) {
+                const p = parseInt(line, 10);
+                if (!isNaN(p)) {
+                    try {
+                        process.kill(p, "SIGKILL");
+                    }
+                    catch {
+                        // already dead
+                    }
+                }
+            }
         }
     }
     catch {
@@ -83,6 +48,7 @@ export const LoopConfigSchema = MarvinConfigSchema.pick({
 }).extend({
     workspaceRoot: z.string(),
     planFile: z.string(),
+    allowMain: z.boolean().default(false),
 });
 const MAX_STALLS = 3;
 const LOCK_FILE = ".marvin/.lock";
@@ -301,7 +267,7 @@ function formatEventStatus(event) {
 }
 export async function runLoop(config, harness, signal) {
     printHeader(config, harness);
-    if (await isMainBranch(config.workspaceRoot)) {
+    if (!config.allowMain && (await isMainBranch(config.workspaceRoot))) {
         printMainBranchError();
         process.exit(1);
     }

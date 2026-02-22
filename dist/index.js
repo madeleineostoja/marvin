@@ -15,6 +15,7 @@ const { values, positionals } = parseArgs({
         harness: { type: "string" },
         "max-iterations": { type: "string" },
         plan: { type: "string", short: "p" },
+        "allow-main": { type: "boolean", default: false },
         help: { type: "boolean", short: "h", default: false },
     },
     allowPositionals: true,
@@ -42,6 +43,7 @@ if (values.help) {
     ui.log("  --harness <name>       claude | opencode (default: from config)");
     ui.log("  -p, --plan <file>      Plan file (overrides config)");
     ui.log("  --max-iterations N     Maximum iterations (default: from config)");
+    ui.log("  --allow-main           Skip the main-branch safety check");
     ui.log("  -h, --help             Show this help");
     ui.blank();
     const quoteLines = ui.quoteBlock(personality.help, 60);
@@ -84,11 +86,20 @@ async function main() {
         preflight: config.preflight,
         models: config.models,
         sandbox: config.sandbox,
+        allowMain: values["allow-main"],
     });
     const controller = new AbortController();
     process.on("SIGINT", () => {
         ui.blank();
-        ui.log(styleText("dim", "Received SIGINT, shutting down..."));
+        if (controller.signal.aborted) {
+            ui.log(styleText("dim", "Forced exit."));
+            // Remove our handler so the next SIGINT (or this one re-raised) gets
+            // the default behaviour (terminate), which still unwinds finally blocks.
+            process.removeAllListeners("SIGINT");
+            process.kill(process.pid, "SIGINT");
+            return;
+        }
+        ui.log(styleText("dim", "Shutting down... (Ctrl+C again to force)"));
         controller.abort();
     });
     process.on("SIGTERM", () => {

@@ -92,6 +92,7 @@ export function createClaudeHarness() {
         invoke(config, _iteration, signal) {
             const args = [
                 "--print",
+                "--verbose",
                 "--output-format",
                 "stream-json",
                 "--dangerously-skip-permissions",
