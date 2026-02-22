@@ -19,13 +19,6 @@ async function* parseStream(
 
   const rl = createInterface({ input: proc.all, crlfDelay: Infinity });
 
-  type BlockState =
-    | { type: "text"; text: string }
-    | { type: "tool_use"; name: string; inputJson: string }
-    | null;
-
-  let current: BlockState = null;
-
   for await (const line of rl) {
     if (!line.trim()) {
       continue;
@@ -39,71 +32,39 @@ async function* parseStream(
       continue;
     }
 
-    if (parsed["type"] !== "stream_event") {
-      continue;
-    }
+    const lineType = parsed["type"] as string | undefined;
 
-    const event = parsed["event"] as Record<string, unknown> | undefined;
-    if (!event) {
-      continue;
-    }
-
-    const eventType = event["type"] as string | undefined;
-
-    if (eventType === "content_block_start") {
-      const block = event["content_block"] as
-        | Record<string, unknown>
+    if (lineType === "assistant") {
+      const message = parsed["message"] as Record<string, unknown> | undefined;
+      const content = message?.["content"] as
+        | Array<Record<string, unknown>>
         | undefined;
-      if (!block) {
+      if (!content) {
         continue;
       }
-      const blockType = block["type"] as string | undefined;
-      if (blockType === "text") {
-        current = { type: "text", text: "" };
-      } else if (blockType === "tool_use") {
-        current = {
-          type: "tool_use",
-          name: block["name"] as string,
-          inputJson: "",
-        };
-      }
-    } else if (eventType === "content_block_delta") {
-      const delta = event["delta"] as Record<string, unknown> | undefined;
-      if (!delta || !current) {
-        continue;
-      }
-      const deltaType = delta["type"] as string | undefined;
-      if (deltaType === "text_delta" && current.type === "text") {
-        current.text += delta["text"] as string;
-      } else if (
-        deltaType === "input_json_delta" &&
-        current.type === "tool_use"
-      ) {
-        current.inputJson += delta["partial_json"] as string;
-      }
-    } else if (eventType === "content_block_stop") {
-      if (!current) {
-        continue;
-      }
-      if (current.type === "text") {
-        yield { type: "text", text: current.text, timestamp: Date.now() };
-      } else if (current.type === "tool_use") {
-        let input: Record<string, unknown> = {};
-        try {
-          input = JSON.parse(current.inputJson || "{}");
-        } catch {
-          input = {};
+
+      for (const block of content) {
+        const blockType = block["type"] as string | undefined;
+
+        if (blockType === "text") {
+          const text = block["text"] as string;
+          if (text) {
+            yield { type: "text", text, timestamp: Date.now() };
+          }
+        } else if (blockType === "tool_use") {
+          const name = (block["name"] as string).toLowerCase();
+          const input = (block["input"] as Record<string, unknown>) ?? {};
+          yield {
+            type: "tool",
+            tool: name,
+            status: "completed",
+            input,
+            timestamp: Date.now(),
+          };
         }
-        yield {
-          type: "tool",
-          tool: current.name,
-          status: "completed",
-          input,
-          timestamp: Date.now(),
-        };
       }
-      current = null;
     }
+    // Ignore "system", "rate_limit_event", "result", "user", and other event types
   }
 }
 
