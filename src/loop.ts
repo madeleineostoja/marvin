@@ -244,6 +244,10 @@ async function setupLogs(config: LoopConfig): Promise<void> {
   const logDir = join(config.workspaceRoot, LOG_DIR);
   await rm(logDir, { recursive: true, force: true });
   await mkdir(logDir, { recursive: true });
+
+  // Ensure .marvin/ is ignored by git so logs and lock files don't dirty the worktree
+  const gitignorePath = join(config.workspaceRoot, ".marvin", ".gitignore");
+  await writeFile(gitignorePath, "*\n");
 }
 
 async function runPreflightCheck(config: LoopConfig): Promise<void> {
