@@ -80,6 +80,7 @@ export function createClaudeHarness(): Harness {
         "--print",
         "--output-format",
         "stream-json",
+        "--verbose",
         "--dangerously-skip-permissions",
         "--no-session-persistence",
         "--model",
