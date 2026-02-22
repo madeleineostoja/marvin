@@ -55,6 +55,7 @@ marvin <plan.md> [options]
 | `--harness <name>`   | `claude` or `opencode`               |
 | `-p, --plan <file>`  | Plan file (overrides config)         |
 | `--max-iterations N` | Maximum iterations (default: 50)     |
+| `--allow-main`       | Bypass the main branch safety check  |
 | `-h, --help`         | Show help                            |
 
 ### Configuration
@@ -67,7 +68,7 @@ Create a `marvin.json` in your workspace root:
   "maxIterations": 50,
   "preflight": "tsc --noEmit",
   "models": {
-    "orchestrator": "opus",
+    "orchestrator": "sonnet",
     "build": "sonnet",
     "review": "opus"
   },
@@ -78,18 +79,18 @@ Create a `marvin.json` in your workspace root:
 }
 ```
 
-| Field           | Description                                                                                                                                                                                                                                                 |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `harness`       | Which AI CLI to drive — `claude` (Claude Code) or `opencode`                                                                                                                                                                                                |
-| `plan`          | Path to the plan file                                                                                                                                                                                                                                       |
-| `maxIterations` | Safety limit on loop iterations.                                                                                                                                                                                                                            |
-| `preflight`     | Shell command to run before starting (e.g. type-check). Fails fast if it errors — Marvin appreciates not wasting time on a doomed codebase.                                                                                                                 |
-| `models`        | Model IDs for each agent. Values are passed directly to the harness — use short names for Claude Code (`opus`, `sonnet`) or provider-prefixed IDs for opencode (`anthropic/claude-opus-4-6`). Defaults: orchestrator `opus`, build `sonnet`, review `opus`. |
-| `sandbox`       | Filesystem and network sandboxing. Restricts write access and network to listed domains.                                                                                                                                                                    |
+| Field           | Description                                                                                                                                                                                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `harness`       | Which AI CLI to drive — `claude` (Claude Code) or `opencode`                                                                                                                                                                                                  |
+| `plan`          | Path to the plan file                                                                                                                                                                                                                                         |
+| `maxIterations` | Safety limit on loop iterations.                                                                                                                                                                                                                              |
+| `preflight`     | Shell command to run before starting (e.g. type-check). Fails fast if it errors — Marvin appreciates not wasting time on a doomed codebase.                                                                                                                   |
+| `models`        | Model IDs for each agent. Values are passed directly to the harness — use short names for Claude Code (`opus`, `sonnet`) or provider-prefixed IDs for opencode (`anthropic/claude-opus-4-6`). Defaults: orchestrator `sonnet`, build `sonnet`, review `opus`. |
+| `sandbox`       | Filesystem and network sandboxing. Restricts write access and network to listed domains.                                                                                                                                                                      |
 
 ### Plan files
 
-The plan file is a markdown document listing tasks for Marvin to work through. Each task should have a clear description and acceptance criteria. Tasks can reference separate spec files for detailed requirements. Each task should use a - [ ] markdown checkbox pattern.
+The plan file is a markdown document listing tasks for Marvin to work through. Each task should have a clear description and acceptance criteria. Tasks can reference separate spec files for detailed requirements. Each task should use a `- [ ]` markdown checkbox pattern.
 
 Marvin updates the plan file as it works — marking tasks done with dates and adding notes about discovered issues.
 
