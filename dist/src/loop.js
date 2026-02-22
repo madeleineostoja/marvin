@@ -132,10 +132,11 @@ function parseExitStatus(output) {
     return "continue";
 }
 async function snapshotWorkingTree(cwd) {
+    const head = await execa("git", ["rev-parse", "HEAD"], { cwd }).then((r) => r.stdout);
     const status = await execa("git", ["status", "--porcelain"], { cwd }).then((r) => r.stdout);
     const diff = await execa("git", ["diff", "HEAD"], { cwd }).then((r) => r.stdout);
     return createHash("md5")
-        .update(status + diff)
+        .update(head + status + diff)
         .digest("hex");
 }
 async function isMainBranch(cwd) {
@@ -222,6 +223,12 @@ function formatElapsed(ms) {
     }
     return `${(ms / 60000).toFixed(1)}m`;
 }
+function formatTokens(tokens) {
+    if (tokens < 1000) {
+        return `${tokens} tokens`;
+    }
+    return `${(tokens / 1000).toFixed(1)}k tokens`;
+}
 function summarizeToolCall(event) {
     const tool = event.tool;
     const input = event.input;
@@ -243,7 +250,10 @@ function summarizeToolCall(event) {
     }
     if (tool === "task" && input?.["description"]) {
         const desc = String(input["description"]);
-        return `task: ${desc.slice(0, 50)}${desc.length > 50 ? "…" : ""}`;
+        const agent = input?.["subagent_type"]
+            ? ` [${String(input["subagent_type"]).replace(/^marvin-/, "")}]`
+            : "";
+        return `task${agent}: ${desc.slice(0, 50)}${desc.length > 50 ? "…" : ""}`;
     }
     return tool;
 }
@@ -337,6 +347,7 @@ export async function runLoop(config, harness, signal) {
                 const logLines = [];
                 const textParts = [];
                 let toolCalls = 0;
+                let modelUsage = null;
                 logLines.push(`=== Iteration ${ctx.iteration} ===`);
                 logLines.push(`Started: ${formatTimestamp(iterStart)}`);
                 logLines.push("");
@@ -358,6 +369,10 @@ export async function runLoop(config, harness, signal) {
                         logLines.push(`[stderr] ${event.text}`);
                         continue;
                     }
+                    else if (event.type === "summary") {
+                        modelUsage = event.modelUsage;
+                        continue;
+                    }
                     else if (event.type === "text") {
                         textParts.push(event.text);
                         const text = event.text.trim();
@@ -373,10 +388,16 @@ export async function runLoop(config, harness, signal) {
                         toolCalls++;
                         s.stop();
                         const summary = summarizeToolCall(event);
-                        ui.detail(`→ ${summary}`);
+                        if (event.agentInfo) {
+                            ui.subDetail(`→ ${summary}`);
+                        }
+                        else {
+                            ui.detail(`→ ${summary}`);
+                        }
                         const status = formatEventStatus(event);
                         const statusSuffix = status ? ` (${status})` : "";
-                        logLines.push(`  → ${summary}${statusSuffix}`);
+                        const logIndent = event.agentInfo ? "    " : "  ";
+                        logLines.push(`${logIndent}→ ${summary}${statusSuffix}`);
                         if (event.metadata?.error) {
                             for (const errorLine of event.metadata.error.split("\n").slice(0, 5)) {
                                 logLines.push(`    ${errorLine}`);
@@ -397,6 +418,24 @@ export async function runLoop(config, harness, signal) {
                 const fullOutput = textParts.join("");
                 logLines.push("── Summary ──────────────────────────────");
                 logLines.push(`Tool calls: ${toolCalls} · Elapsed: ${formatElapsed(elapsedMs)}`);
+                if (modelUsage) {
+                    const totalTokens = Object.values(modelUsage).reduce((sum, u) => sum + u.inputTokens + u.outputTokens, 0);
+                    logLines.push(`Tokens: ${formatTokens(totalTokens)}`);
+                    for (const [model, usage] of Object.entries(modelUsage)) {
+                        const total = usage.inputTokens + usage.outputTokens;
+                        const parts = [
+                            `in: ${formatTokens(usage.inputTokens)}`,
+                            `out: ${formatTokens(usage.outputTokens)}`,
+                        ];
+                        if (usage.cacheReadTokens > 0) {
+                            parts.push(`cache read: ${formatTokens(usage.cacheReadTokens)}`);
+                        }
+                        if (usage.cacheCreationTokens > 0) {
+                            parts.push(`cache write: ${formatTokens(usage.cacheCreationTokens)}`);
+                        }
+                        logLines.push(`  ${model}: ${formatTokens(total)} (${parts.join(", ")})`);
+                    }
+                }
                 logLines.push(`Exit code: ${iterResult.exitCode ?? "unknown"}`);
                 logLines.push("");
                 await writeFile(logPath, logLines.join("\n"));
@@ -411,6 +450,7 @@ export async function runLoop(config, harness, signal) {
                     output: fullOutput,
                     elapsedMs,
                     toolCalls,
+                    modelUsage,
                 };
             }
             catch (error) {
@@ -423,6 +463,12 @@ export async function runLoop(config, harness, signal) {
             const afterHash = await snapshotWorkingTree(config.workspaceRoot);
             const diagEl = formatElapsed(result.elapsedMs);
             ui.detail(`${diagEl} · ${result.toolCalls} tool calls`);
+            if (result.modelUsage) {
+                for (const [model, usage] of Object.entries(result.modelUsage)) {
+                    const total = usage.inputTokens + usage.outputTokens;
+                    ui.detail(`  ${model}: ${formatTokens(total)}`);
+                }
+            }
             if (!result.success) {
                 ui.blank();
                 ui.status("red", "Orchestrator failed");

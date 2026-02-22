@@ -95,3 +95,6 @@ export function sideBySide(left, right, gap = 4) {
 export function detail(text) {
     log(styleText("dim", text));
 }
+export function subDetail(text) {
+    log(styleText("gray", `  ${text}`));
+}

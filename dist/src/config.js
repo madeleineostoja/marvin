@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { z } from "zod";
 export const ModelsSchema = z.object({
-    orchestrator: z.string().default("opus"),
+    orchestrator: z.string().default("sonnet"),
     build: z.string().default("sonnet"),
     review: z.string().default("opus"),
 });
@@ -12,7 +12,7 @@ export const MarvinConfigSchema = z.object({
     maxIterations: z.number().default(50),
     preflight: z.string().nullable().optional(),
     models: ModelsSchema.default({
-        orchestrator: "opus",
+        orchestrator: "sonnet",
         build: "sonnet",
         review: "opus",
     }),

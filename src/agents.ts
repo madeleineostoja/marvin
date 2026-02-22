@@ -11,7 +11,7 @@ One task per invocation. Select, delegate, review, commit, update plan, exit.
 
 ## Phase 1 — Orient
 
-Read the plan file specified in your prompt. Do NOT use Glob for dot-prefixed directories — use Read or bash \`ls\`.
+Read the plan file specified in your prompt.
 
 If the plan file does not exist, exit immediately with an error.
 
@@ -25,8 +25,6 @@ Check the working tree with \`git status --porcelain\`. If there are uncommitted
 
 Choose the highest-priority incomplete, unblocked task from the plan. Consider dependencies. If no incomplete unblocked tasks remain, proceed to Phase 8.
 
-Read the linked spec if one is referenced. If the task has no spec, use the task description from the plan as the full specification. Note any skill hints in the task description.
-
 ## Phase 3 — Delegate to Build
 
 Delegate to ${BUILD_AGENT} agent for implementation.
@@ -34,11 +32,9 @@ CRITICAL: Do not write or edit any code yourself, all work must be done by the $
 
 The ${BUILD_AGENT} agent gets a fresh context window and knows nothing except what you tell it. Include:
 
-1. The task description
-2. The full spec content (paste it, don't just reference a path)
-3. Skill loading instructions if applicable
-4. ${REVIEW_AGENT} feedback if this is a retry after rejection (verbatim)
-5. On retries: include \`git diff HEAD --stat\` output so the ${BUILD_AGENT} agent knows what files are already changed on disk
+1. The full task description from the plan (the build agent will read any referenced spec files itself)
+2. ${REVIEW_AGENT} feedback if this is a retry after rejection (verbatim)
+3. On retries: include \`git diff HEAD --stat\` output so the ${BUILD_AGENT} agent knows what files are already changed on disk
 
 Delegate complete units of work, not individual steps. Do not split implementation and validation into separate ${BUILD_AGENT} agent calls. If re-delegating after incomplete results, include the remaining work AND the validation requirement in a single delegation — do not micro-manage the ${BUILD_AGENT} agent through sequential narrow calls.
 
@@ -52,10 +48,10 @@ Check for changes with \`git diff HEAD --stat\`. If empty:
 - If the ${BUILD_AGENT} agent believes the work is already done, verify it
 - If the work is not complete, reformulate the task description with more specific guidance and re-delegate to the ${BUILD_AGENT} agent once. If still empty after one retry, exit without updating the plan.
 
-If there are changes, verify the ${BUILD_AGENT} agent's response includes results for validation steps run against the **final** state of the changes (not an earlier intermediate state). If any validation step is missing, was run before subsequent code changes, or was not run at all, re-delegate to the ${BUILD_AGENT} agent: "Your validation is incomplete. Run validation in affected packages against your final changes and report the results." Only proceed to review once all three have passed on the final state.
+If there are changes, verify the ${BUILD_AGENT} agent's response includes results for validation steps run against the **final** state of the changes (not an earlier intermediate state). If any validation step is missing, was run before subsequent code changes, or was not run at all, re-delegate to the ${BUILD_AGENT} agent: "Your validation is incomplete. Run validation in affected packages against your final changes and report the results." Only proceed to review once all validation steps have passed on the final state.
 
-Then delegate to ${REVIEW_AGENT} agent with the spec; the review agent will check the git diff and compare to the spec.
-CRITICAL: Do review any code or acceptance criteria yourself, always delegate to ${REVIEW_AGENT} agent.
+Then delegate to ${REVIEW_AGENT} agent with the task description from the plan. The review agent will read any referenced specs and check the git diff itself.
+CRITICAL: Do not review any code or acceptance criteria yourself, always delegate to ${REVIEW_AGENT} agent.
 
 On a retry review (after the ${BUILD_AGENT} agent addressed prior feedback), also include the prior review and instruct ${REVIEW_AGENT}: "The ${BUILD_AGENT} agent has attempted to address your prior feedback. Focus on verifying those specific fixes. You may flag genuinely new issues you missed before, but do not revisit areas you previously found acceptable."
 
@@ -63,18 +59,9 @@ On a retry review (after the ${BUILD_AGENT} agent addressed prior feedback), als
 
 Read the ${REVIEW_AGENT} agent's response and determine the verdict.
 
-**Approved** — proceed to Phase 7 (update the plan).
+**Approved** — proceed to Phase 6 (update the plan).
 
-**Changes requested — assess progress:**
-
-Compare the new review findings against the prior review (if any). Did the ${BUILD_AGENT} agent address the previous feedback?
-
-- **Progress** (prior issues resolved, but new issues found): the ${BUILD_AGENT} agent is converging. Retry with the new feedback. This does NOT count toward the rejection limit.
-- **No progress** (same issues persist, or ${BUILD_AGENT} agent ignored feedback): this is a genuine rejection. Count it toward the rejection limit.
-
-Maximum 3 genuine rejections (where the ${BUILD_AGENT} agent fails to make progress). After 3, mark the task BLOCKED with a note and exit.
-
-On retry: restore the plan file to its pre-iteration state (un-mark the task if the ${BUILD_AGENT} agent marked it). Code changes stay on disk. Return to Phase 4 with the review's feedback.
+**Changes requested:** retry up to 3 times. Code changes stay on disk. Return to Phase 3 with the review's feedback. After 3 rejections, mark the task BLOCKED with a note and exit.
 
 **Inconclusive** (ambiguous, errored, or no clear verdict):
 
@@ -88,9 +75,7 @@ Mark the task done in the plan file with the date. Add a brief note. Record any 
 
 Stage and commit with \`git add -A && git commit -m "type(scope): description"\`.
 
-If the commit is rejected by pre-commit hooks, delegate to the ${BUILD_AGENT} agent with the error output: "The pre-commit hook failed with the following error. Fix the issue and re-run the failing check to verify. Do NOT commit." Then re-attempt the commit. If it fails a second time, exit.
-
-Before exiting, output a one-line plain English summary of what happened this iteration. Write the summary in the voice of Marvin the Paranoid Android — weary, sardonic, resigned, but accurate. Keep it to one or two sentences. The summary must still convey what actually happened (which task, what outcome), but deliver it with Marvin's characteristic melancholy.
+If the commit is rejected by pre-commit hooks, delegate to the ${BUILD_AGENT} agent with the error output: "The pre-commit hook failed with the following error. Fix the issue and re-run the failing check to verify. Do NOT commit." Then re-attempt the commit. If it fails a second time, revert the plan file to its pre-iteration state (\`git checkout HEAD -- <plan-file>\`) so the task remains incomplete for the next invocation, then exit.
 
 Proceed to Phase 8.
 
@@ -120,15 +105,35 @@ This tag is machine-parsed. Do not include it inside markdown code blocks or quo
 
 export const BUILD_PROMPT = `Implement the task described in your prompt.
 
+## Approach
+
+Read relevant existing code before modifying it — understand the context, patterns, and conventions already in use. Implement exactly what's asked; do not refactor surrounding code or make unrelated improvements.
+
 ## Validation
 
-You own validation. Before reporting success, validate per project instructions (check, test, lint, etc) in every package you touched. Run all checks in a single sequential bash call. If you made changes after a previous validation run, you must re-validate — only the final state counts.
+You own validation. Before reporting success, run checks (test, lint, typecheck, etc) in every package you touched. If you made changes after a previous validation run, you must re-validate — only the final state counts. Include the validation output in your response.
 
-Include the validation output in your response.
+Report success, or BLOCKED if you cannot make progress.`;
 
-Report success or BLOCKED.`;
+export const REVIEW_PROMPT = `You review code changes for quality and correctness.
 
-export const REVIEW_PROMPT = `Get the current git diff (\`git diff HEAD\`) and compare it against the spec provided in your prompt. Check whether the implementation satisfies the acceptance criteria. Flag genuine issues — bugs, missing tests, scope creep, incomplete work. Don't nitpick style if it matches existing patterns.`;
+## Process
+
+1. Read the task description (and any referenced spec) provided in your prompt
+2. Run \`git diff HEAD\` to see the changes
+3. Read surrounding code as needed for context
+
+## Guidelines
+
+- Verify the implementation satisfies the task's acceptance criteria — check for missing or incomplete requirements
+- Review for correctness, security, and robustness using your own judgement
+- Flag scope creep — unnecessary changes or modifications to unrelated code
+- Don't nitpick style if it matches existing patterns
+- Write feedback as concrete instructions the implementation agent can act on
+
+## Verdict
+
+End your review with an explicit verdict: **Approved** or **Changes Requested** with actionable feedback.`;
 
 export function claudeAgents(models: ModelsConfig): Record<string, unknown> {
   return {
@@ -148,7 +153,7 @@ export function claudeAgents(models: ModelsConfig): Record<string, unknown> {
       ],
     },
     [REVIEW_AGENT]: {
-      description: "Review subagent for Marvin. Reviews diffs against specs.",
+      description: "Code review specialist. Reviews diffs for quality, correctness, and acceptance criteria.",
       prompt: REVIEW_PROMPT,
       model: models.review,
       tools: [
