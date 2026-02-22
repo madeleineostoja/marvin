@@ -35,10 +35,10 @@ The orchestrator is the only agent that touches the plan file. Build and review 
 
 ## Setup
 
-Requires Node.js >= 24.
+Requires Node.js >= 24 and pnpm.
 
 ```sh
-npm i -g github:madeleineostoja/marvin
+pnpm add -g github:madeleineostoja/marvin
 ```
 
 ## Usage
