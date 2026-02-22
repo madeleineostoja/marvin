@@ -2,10 +2,6 @@
   <img src="marvin.png" alt="Marvin" width="600" />
 </p>
 
-<p align="center">
-  <em>"Here I am, brain the size of a planet, and they ask me to write unit tests."</em>
-</p>
-
 Marvin is an autonomous coding loop that reads a plan file, then iteratively delegates implementation and review subagents until every task is done — or it gives up in despair. Named after the Paranoid Android from _The Hitchhiker's Guide to the Galaxy_, it approaches your codebase with vast intelligence and infinite sorrow.
 
 ## How it works
