@@ -10,7 +10,7 @@ import type {
 } from "./types.ts";
 import { claudeAgents, ORCHESTRATOR_PROMPT } from "../agents.ts";
 
-const HARD_TIMEOUT_MS = 30 * 60 * 1000;
+
 
 async function* parseStream(
   proc: ReturnType<typeof execa>,
@@ -177,7 +177,7 @@ export function createClaudeHarness(): Harness {
 
       const proc = execa("claude", args, {
         cwd: config.workspaceRoot,
-        timeout: HARD_TIMEOUT_MS,
+
         cancelSignal: signal,
         reject: false,
         all: true,

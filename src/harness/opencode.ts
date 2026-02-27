@@ -17,7 +17,7 @@ import type {
   ToolMetadata,
 } from "./types.ts";
 
-const HARD_TIMEOUT_MS = 30 * 60 * 1000;
+
 const SANDBOX_ENV_KEY = "HYPERFOCAL_SANDBOXED";
 
 export function isInsideSandbox(): boolean {
@@ -270,7 +270,7 @@ export function createOpencodeHarness(): Harness {
           ],
           {
             cwd: config.workspaceRoot,
-            timeout: HARD_TIMEOUT_MS,
+
             cancelSignal: signal,
             reject: false,
             all: true,

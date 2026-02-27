@@ -1,7 +1,6 @@
 import { execa } from "execa";
 import { createInterface } from "node:readline";
 import { claudeAgents, ORCHESTRATOR_PROMPT } from "../agents.js";
-const HARD_TIMEOUT_MS = 30 * 60 * 1000;
 async function* parseStream(proc) {
     if (!proc.all) {
         return;
@@ -141,7 +140,6 @@ export function createClaudeHarness() {
             args.push(`Execute the next iteration. Plan: ${config.planFile}`);
             const proc = execa("claude", args, {
                 cwd: config.workspaceRoot,
-                timeout: HARD_TIMEOUT_MS,
                 cancelSignal: signal,
                 reject: false,
                 all: true,

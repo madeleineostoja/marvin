@@ -9,7 +9,6 @@ import { execa } from "execa";
 import { personality } from "../personality.js";
 import * as ui from "../ui.js";
 import { ORCHESTRATOR_AGENT, opencodeAgentOverrides, opencodePermissions } from "../agents.js";
-const HARD_TIMEOUT_MS = 30 * 60 * 1000;
 const SANDBOX_ENV_KEY = "HYPERFOCAL_SANDBOXED";
 export function isInsideSandbox() {
     return process.env[SANDBOX_ENV_KEY] === "1";
@@ -190,7 +189,6 @@ export function createOpencodeHarness() {
                     `Execute the next iteration. Plan: ${config.planFile}`,
                 ], {
                     cwd: config.workspaceRoot,
-                    timeout: HARD_TIMEOUT_MS,
                     cancelSignal: signal,
                     reject: false,
                     all: true,
