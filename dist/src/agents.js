@@ -107,18 +107,17 @@ First, read any spec files referenced in the task description — these contain 
 You own validation. Before reporting success, run checks (test, lint, typecheck, etc) in every package you touched. If you made changes after a previous validation run, you must re-validate — only the final state counts. Include the validation output in your response.
 
 Report success, or BLOCKED if you cannot make progress.`;
-export const REVIEW_PROMPT = `You review code changes for quality and correctness.
+export const REVIEW_PROMPT = `Critically review code changes for quality and correctness.
 
 ## Process
 
 1. Read any spec files referenced in the task description — these contain the detailed requirements and acceptance criteria
-2. Read the changed files listed in your prompt to review the implementation
-3. Read surrounding code as needed for context
+2. Read the changed files in your prompt and surrounding files as needed to review implementation
 
 ## Guidelines
 
 - Verify the implementation satisfies the task's requirements — check for missing or incomplete work
-- Review for correctness, security, and robustness using your own judgement
+- Critically review for quality, correctness, security, and robustness using your own judgement
 - Flag scope creep — unnecessary changes or modifications to unrelated code
 - Don't nitpick style if it matches existing patterns
 - Write feedback as concrete instructions the implementation agent can act on
@@ -138,11 +137,7 @@ export function claudeAgents(models) {
             description: "Code review specialist. Reviews diffs for quality, correctness, and acceptance criteria.",
             prompt: REVIEW_PROMPT,
             model: models.review,
-            tools: [
-                "Read",
-                "Grep",
-                "Glob",
-            ],
+            tools: ["Read", "Grep", "Glob"],
         },
     };
 }
