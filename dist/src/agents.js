@@ -95,7 +95,8 @@ This tag is machine-parsed. Do not include it inside markdown code blocks or quo
 - Your tools are: reading/editing the plan file, git commands (\`status\`, \`diff --stat\`, \`add\`, \`commit\`, \`checkout\`, \`clean\`), and delegating to subagents
 - Never skip review
 - Never commit without review approval
-- If blocked, document and exit — don't spin`;
+- If blocked, document and exit — don't spin
+- Never use worktree isolation when delegating to subagents — all work happens in the current working directory`;
 export const BUILD_PROMPT = `Implement the task described in your prompt.
 
 ## Approach
