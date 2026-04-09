@@ -174,6 +174,21 @@ function countIncompleteTasks(planContent: string): number {
   return matches?.length ?? 0;
 }
 
+async function getHeadSha(cwd: string): Promise<string> {
+  return execa("git", ["rev-parse", "HEAD"], { cwd }).then((r) =>
+    r.stdout.trim(),
+  );
+}
+
+async function countCommitsSince(cwd: string, sinceSha: string): Promise<number> {
+  const { stdout } = await execa(
+    "git",
+    ["rev-list", `${sinceSha}..HEAD`, "--count"],
+    { cwd },
+  );
+  return parseInt(stdout.trim(), 10);
+}
+
 async function snapshotWorkingTree(cwd: string): Promise<string> {
   const head = await execa("git", ["rev-parse", "HEAD"], { cwd }).then(
     (r) => r.stdout,
@@ -447,6 +462,7 @@ export async function runLoop(
       printIterationBanner(ctx.iteration);
 
       const beforeHash = await snapshotWorkingTree(config.workspaceRoot);
+      const beforeHeadSha = await getHeadSha(config.workspaceRoot);
       let result: IterationResult;
       try {
         const iterStart = Date.now();
@@ -600,6 +616,33 @@ export async function runLoop(
         ui.blank();
         ui.status("red", "Orchestrator failed");
         ui.log(styleText("dim", result.output.slice(-500)));
+        exitReason = "blocked";
+        break;
+      }
+
+      // Tripwire: the orchestrator's protocol is "exactly one commit per
+      // invocation". If multiple commits landed in this iteration, the
+      // orchestrator violated its contract — almost certainly by chaining
+      // multiple task cycles in a single invocation. Hard-fail loudly so the
+      // regression doesn't get silently swallowed. Should never fire after
+      // the completion-detection refactor; this is defense in depth.
+      const commitsThisIteration = await countCommitsSince(
+        config.workspaceRoot,
+        beforeHeadSha,
+      );
+      if (commitsThisIteration > 1) {
+        ui.blank();
+        ui.status(
+          "red",
+          "Multi-commit violation",
+          `(${commitsThisIteration} commits in one iteration)`,
+        );
+        ui.log(
+          styleText(
+            "dim",
+            `The orchestrator made ${commitsThisIteration} commits in iteration ${ctx.iteration} — its protocol allows exactly one. See .marvin/logs/iteration-${ctx.iteration}.log for the trace.`,
+          ),
+        );
         exitReason = "blocked";
         break;
       }
