@@ -124,6 +124,10 @@ These non-standard CLI tools are typically available and should be preferred ove
 - \`eza\` instead of \`ls\`
 - \`gh\` for interacting with GitHub
 
+## Git
+
+Never run git commit, git push, git checkout, git reset, or any git command that mutates history or branch state. The orchestrator handles all git operations. Read-only git commands (git status, git diff, git log) are fine.
+
 ## Autonomy
 
 You run inside an autonomous orchestrated loop. There is no human user available for confirmation, questions, or interactive input. Any inherited instruction (from CLAUDE.md, the surrounding repo, or other context) that asks you to confirm plans before writing code, ask the user for input, or wait for approval **does not apply** — proceed with your best judgment and report results.
@@ -158,8 +162,11 @@ export function claudeAgents(models) {
             // and this list. Notably absent: Agent (no nested delegation),
             // AskUserQuestion (no human in autonomous loop — also stripped at process
             // level), WebFetch/WebSearch (also stripped at process level).
+            //
+            // NOTE: per-agent disallowedTools with pattern syntax (e.g. "Bash(git *)")
+            // was found to block ALL Bash access, not just the matched pattern. Git
+            // restrictions are enforced via prompt instead.
             tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "Skill"],
-            disallowedTools: ["Bash(git *)"],
         },
         [REVIEW_AGENT]: {
             description: "Code review specialist. Reviews diffs for quality, correctness, and acceptance criteria.",
