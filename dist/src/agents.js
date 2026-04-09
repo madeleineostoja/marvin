@@ -125,6 +125,12 @@ export function claudeAgents(models) {
             description: "Implementation specialist. Delegate to this agent for coding tasks.",
             prompt: BUILD_PROMPT,
             model: models.build,
+            // Per-subagent `tools` is structurally enforced for subagents (verified
+            // empirically): the build agent only sees the intersection of process tools
+            // and this list. Notably absent: Agent (no nested delegation),
+            // AskUserQuestion (no human in autonomous loop — also stripped at process
+            // level), WebFetch/WebSearch (also stripped at process level).
+            tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "Skill"],
             disallowedTools: ["Bash(git *)"],
         },
         [REVIEW_AGENT]: {

@@ -113,6 +113,48 @@ export function createClaudeHarness() {
     return {
         name: "claude",
         invoke(config, _iteration, signal) {
+            // Isolation flags. Marvin runs claude as an isolated subprocess; we want to
+            // strip user-environment leakage as much as the platform allows.
+            //
+            // - `--strict-mcp-config` (no `--mcp-config`) blocks all MCP servers from
+            //   both `~/.claude/` and project `.mcp.json`. Verified empirically.
+            // - `--setting-sources project` skips user-level settings (hooks,
+            //   permissions, auto-memory). Subscription auth still works.
+            // - `--disable-slash-commands` empties the /command list. SKILL.md skills
+            //   still load (the flag is misnamed for our purposes), but the build
+            //   agent's per-agent `tools` whitelist controls Skill access structurally.
+            // - `--disallowedTools` removes specific tools from the entire process.
+            //   This cascades to subagents, so we only disallow tools that NEITHER role
+            //   should ever use (see list below).
+            //
+            // Platform constraint worth noting: there is NO mechanism in Claude Code
+            // 2.1.97 to give the orchestrator (active session) a more restricted tool
+            // surface than its subagents. `--allowedTools` is additive pre-approval,
+            // not a whitelist; `--settings` permissions cascade to subagents and have
+            // inverted precedence (deny > allow); per-agent `tools` is restrictive
+            // for subagents but ignored for the active session agent. So the
+            // orchestrator inherits the full process tool surface minus what we strip
+            // here, and "orchestrator only edits the plan file" is enforced by prompt +
+            // multi-commit tripwire, not structurally. See git history for the spike
+            // investigation.
+            const disallowedTools = [
+                "AskUserQuestion",
+                "NotebookEdit",
+                "WebFetch",
+                "WebSearch",
+                "TodoWrite",
+                "ToolSearch",
+                "EnterPlanMode",
+                "ExitPlanMode",
+                "EnterWorktree",
+                "ExitWorktree",
+                "CronCreate",
+                "CronDelete",
+                "CronList",
+                "RemoteTrigger",
+                "TaskOutput",
+                "TaskStop",
+            ].join(" ");
             const args = [
                 "--print",
                 "--output-format",
@@ -120,6 +162,12 @@ export function createClaudeHarness() {
                 "--verbose",
                 "--dangerously-skip-permissions",
                 "--no-session-persistence",
+                "--strict-mcp-config",
+                "--setting-sources",
+                "project",
+                "--disable-slash-commands",
+                "--disallowedTools",
+                disallowedTools,
                 "--model",
                 config.models.orchestrator,
                 "--append-system-prompt",
