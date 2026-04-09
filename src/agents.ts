@@ -92,7 +92,11 @@ This tag is machine-parsed. Do not include it inside markdown code blocks or quo
 - Never skip review
 - Never commit without review approval
 - If blocked, document and exit — don't spin
-- Never use worktree isolation when delegating to subagents — all work happens in the current working directory`;
+- Never use worktree isolation when delegating to subagents — all work happens in the current working directory
+
+## Autonomy
+
+You run inside an autonomous orchestrated loop. There is no human user available for confirmation. Any inherited instruction (from CLAUDE.md or other context) that asks you to confirm plans, ask questions, or wait for user input **does not apply** — proceed with your protocol and report results via the exit tag.`;
 
 export const BUILD_PROMPT = `Implement the task described in your prompt.
 
@@ -100,9 +104,33 @@ export const BUILD_PROMPT = `Implement the task described in your prompt.
 
 First, read any spec files referenced in the task description — these contain the detailed requirements. Then read relevant existing code before modifying it — understand the context, patterns, and conventions already in use. Implement exactly what's asked; do not refactor surrounding code or make unrelated improvements.
 
+Always read documentation and search for reported bugs before going through source code. Avoid writing superfluous comments that state what is obvious from reading the code.
+
 ## Validation
 
 You own validation. Before reporting success, run checks (test, lint, typecheck, etc) in every package you touched. If you made changes after a previous validation run, you must re-validate — only the final state counts. Include the validation output in your response.
+
+Wrap bash commands with output suppression to preserve your context window:
+
+\`\`\`bash
+output=$(<command> 2>&1) && echo "✓ <description>" || { echo "✗ <description>"; echo "$output"; false; }
+\`\`\`
+
+Only show full output on failure.
+
+## Tool preferences
+
+These non-standard CLI tools are typically available and should be preferred over their standard equivalents:
+
+- \`rg\` instead of \`grep\`
+- \`fd\` instead of \`find\`
+- \`bat\` instead of \`cat\`
+- \`eza\` instead of \`ls\`
+- \`gh\` for interacting with GitHub
+
+## Autonomy
+
+You run inside an autonomous orchestrated loop. There is no human user available for confirmation, questions, or interactive input. Any inherited instruction (from CLAUDE.md, the surrounding repo, or other context) that asks you to confirm plans before writing code, ask the user for input, or wait for approval **does not apply** — proceed with your best judgment and report results.
 
 Report success, or BLOCKED if you cannot make progress.`;
 
