@@ -244,7 +244,6 @@ export function createClaudeHarness(): Harness {
         all: true,
         buffer: false,
         stdin: "ignore",
-        detached: true,
         forceKillAfterDelay: 5000,
         env: {
           ...process.env,

@@ -15,9 +15,10 @@ async function cleanupIteration(pid) {
         return;
     }
     // execa handles SIGTERM → SIGKILL via cancelSignal + forceKillAfterDelay.
-    // Just sweep for any setsid escapees (e.g. Playwright browsers).
+    // Sweep for any orphaned child processes (e.g. vitest, node) that outlived
+    // the subprocess and would otherwise sit idle consuming RAM.
     try {
-        const survivors = execSync(`pgrep -g ${pid}`, {
+        const survivors = execSync(`pgrep -P ${pid}`, {
             encoding: "utf8",
             timeout: 2000,
             stdio: ["pipe", "pipe", "pipe"],

@@ -77,12 +77,11 @@ export async function runInSandbox(args, config) {
             stdio: "inherit",
             cwd: workspaceRoot,
             env: { ...process.env, [SANDBOX_ENV_KEY]: "1" },
-            detached: true,
         });
-        const killProcessGroup = (signal) => {
+        const killChild = (signal) => {
             if (child.pid) {
                 try {
-                    process.kill(-child.pid, signal);
+                    child.kill(signal);
                 }
                 catch { }
             }
@@ -113,7 +112,7 @@ export async function runInSandbox(args, config) {
             process.exit(1);
         });
         process.once("SIGINT", () => {
-            killProcessGroup("SIGINT");
+            killChild("SIGINT");
             ui.blank();
             ui.status("yellow", "Shutting down");
             const quoteLines = ui.quoteBlock(personality.pick(personality.shutdown));
@@ -122,12 +121,12 @@ export async function runInSandbox(args, config) {
             }
             rmSync(join(workspaceRoot, ".marvin/.lock"), { force: true });
             setTimeout(() => {
-                killProcessGroup("SIGKILL");
+                killChild("SIGKILL");
                 process.exit(130);
             }, 3000).unref();
         });
         process.once("SIGTERM", () => {
-            killProcessGroup("SIGTERM");
+            killChild("SIGTERM");
             ui.blank();
             ui.status("yellow", "Shutting down");
             const quoteLines = ui.quoteBlock(personality.pick(personality.shutdown));
@@ -136,7 +135,7 @@ export async function runInSandbox(args, config) {
             }
             rmSync(join(workspaceRoot, ".marvin/.lock"), { force: true });
             setTimeout(() => {
-                killProcessGroup("SIGKILL");
+                killChild("SIGKILL");
                 process.exit(143);
             }, 3000).unref();
         });
@@ -194,7 +193,6 @@ export function createOpencodeHarness() {
                     all: true,
                     buffer: false,
                     stdin: "ignore",
-                    detached: true,
                     forceKillAfterDelay: 5000,
                     env: {
                         ...process.env,
