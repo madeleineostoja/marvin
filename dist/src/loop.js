@@ -123,13 +123,17 @@ function printDirtyTreeError() {
 function parseExitStatus(output) {
     const match = output.match(/<marvin>(\w+)<\/marvin>/);
     const status = match?.[1];
-    if (status === "complete") {
-        return "complete";
-    }
     if (status === "blocked") {
         return "blocked";
     }
     return "continue";
+}
+// Counts unchecked Markdown task list items (lines like `- [ ] ...` with optional indent).
+// The loop owns plan-completion detection — the orchestrator's only job is to commit one
+// task and exit, so we re-read the plan after each iteration to decide whether to stop.
+function countIncompleteTasks(planContent) {
+    const matches = planContent.match(/^[ \t]*-[ \t]+\[[ \t]\]/gm);
+    return matches?.length ?? 0;
 }
 async function snapshotWorkingTree(cwd) {
     const head = await execa("git", ["rev-parse", "HEAD"], { cwd }).then((r) => r.stdout);
@@ -477,12 +481,6 @@ export async function runLoop(config, harness, signal) {
                 break;
             }
             const exitStatus = parseExitStatus(result.output);
-            if (exitStatus === "complete") {
-                ui.blank();
-                ui.status("green", "All tasks completed");
-                exitReason = "completed";
-                break;
-            }
             if (exitStatus === "blocked") {
                 ui.blank();
                 ui.status("yellow", "Blocked");
@@ -491,6 +489,16 @@ export async function runLoop(config, harness, signal) {
                     ui.log(line);
                 }
                 exitReason = "blocked";
+                break;
+            }
+            // Loop owns completion detection: re-read the plan after each iteration and
+            // stop when zero unchecked tasks remain. The orchestrator's `continue` tag
+            // just means "I'm done with my one task" — it does not mean "more work remains".
+            const planContent = await readFile(planPath, "utf-8");
+            if (countIncompleteTasks(planContent) === 0) {
+                ui.blank();
+                ui.status("green", "All tasks completed");
+                exitReason = "completed";
                 break;
             }
             if (beforeHash === afterHash) {

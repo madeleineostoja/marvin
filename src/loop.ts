@@ -157,16 +157,21 @@ function printDirtyTreeError(): void {
   ui.log(styleText("dim", "  git add -A && git commit  # to commit them"));
 }
 
-function parseExitStatus(output: string): "complete" | "blocked" | "continue" {
+function parseExitStatus(output: string): "blocked" | "continue" {
   const match = output.match(/<marvin>(\w+)<\/marvin>/);
   const status = match?.[1];
-  if (status === "complete") {
-    return "complete";
-  }
   if (status === "blocked") {
     return "blocked";
   }
   return "continue";
+}
+
+// Counts unchecked Markdown task list items (lines like `- [ ] ...` with optional indent).
+// The loop owns plan-completion detection — the orchestrator's only job is to commit one
+// task and exit, so we re-read the plan after each iteration to decide whether to stop.
+function countIncompleteTasks(planContent: string): number {
+  const matches = planContent.match(/^[ \t]*-[ \t]+\[[ \t]\]/gm);
+  return matches?.length ?? 0;
 }
 
 async function snapshotWorkingTree(cwd: string): Promise<string> {
@@ -600,12 +605,6 @@ export async function runLoop(
       }
 
       const exitStatus = parseExitStatus(result.output);
-      if (exitStatus === "complete") {
-        ui.blank();
-        ui.status("green", "All tasks completed");
-        exitReason = "completed";
-        break;
-      }
 
       if (exitStatus === "blocked") {
         ui.blank();
@@ -617,6 +616,17 @@ export async function runLoop(
           ui.log(line);
         }
         exitReason = "blocked";
+        break;
+      }
+
+      // Loop owns completion detection: re-read the plan after each iteration and
+      // stop when zero unchecked tasks remain. The orchestrator's `continue` tag
+      // just means "I'm done with my one task" — it does not mean "more work remains".
+      const planContent = await readFile(planPath, "utf-8");
+      if (countIncompleteTasks(planContent) === 0) {
+        ui.blank();
+        ui.status("green", "All tasks completed");
+        exitReason = "completed";
         break;
       }
 

@@ -20,7 +20,7 @@ Check the working tree with \`git status --porcelain\`. If there are uncommitted
 
 ## Phase 2 — Select Task
 
-Choose the highest-priority incomplete, unblocked task from the plan. Consider dependencies. If no incomplete unblocked tasks remain, proceed to Phase 8.
+Choose the highest-priority incomplete, unblocked task from the plan. Consider dependencies. If no incomplete unblocked tasks remain, exit immediately with \`<marvin>continue</marvin>\` — the loop will detect plan completion and stop.
 
 ## Phase 3 — Delegate to Build
 
@@ -62,33 +62,26 @@ Re-delegate to ${REVIEW_AGENT} once with a direct ask: "Your prior review was un
 
 Mark the task done in the plan file with the date. Add a brief note. Record any discovered issues in the "Discovered Issues" section.
 
-## Phase 7 — Commit
+## Phase 7 — Commit and Exit
 
 Stage and commit with \`git add -A && git commit -m "type(scope): description"\`.
 
-If the commit is rejected by pre-commit hooks, delegate to the ${BUILD_AGENT} agent with the error output: "The pre-commit hook failed with the following error. Fix the issue and re-run the failing check to verify. Do NOT commit." Then re-attempt the commit. If it fails a second time, revert the plan file to its pre-iteration state (\`git checkout HEAD -- <plan-file>\`) so the task remains incomplete for the next invocation, then exit.
+If the commit is rejected by pre-commit hooks, delegate to the ${BUILD_AGENT} agent with the error output: "The pre-commit hook failed with the following error. Fix the issue and re-run the failing check to verify. Do NOT commit." Then re-attempt the commit. If it fails a second time, revert the plan file to its pre-iteration state (\`git checkout HEAD -- <plan-file>\`) so the task remains incomplete for the next invocation, then exit with \`<marvin>continue</marvin>\`.
 
-Proceed to Phase 8.
-
-## Phase 8 — Completion
-
-Re-read the plan file. If incomplete unblocked tasks remain, exit with \`<marvin>continue</marvin>\`.
-
-If no incomplete unblocked tasks remain, exit with \`<marvin>complete</marvin>\`.
+After a successful commit, exit immediately with \`<marvin>continue</marvin>\`. **Do not** start a second task in this invocation. **Do not** re-read the plan to "see what's next." The loop will detect plan completion and stop on its own — completion is not your responsibility.
 
 ## Exit Protocol
 
 Your final line of output must be exactly one of these XML tags (on its own line, no surrounding prose):
 
-- \`<marvin>continue</marvin>\` — task completed, more tasks remain in the plan
-- \`<marvin>complete</marvin>\` — all tasks done
+- \`<marvin>continue</marvin>\` — task committed, return control to the loop
 - \`<marvin>blocked</marvin>\` — cannot proceed without human intervention
 
 This tag is machine-parsed. Do not include it inside markdown code blocks or quotes.
 
 ## Rules
 
-- One task per invocation
+- **Exactly one task per invocation.** After committing one task, you exit. You do not begin a second task even if the first finishes quickly. The loop will invoke you again if more work remains.
 - Never read, edit, or write application code — the only files you touch are the plan file and git state
 - Never run tests, linters, or validation — that is the ${BUILD_AGENT} agent's responsibility
 - Never verify implementation details yourself — trust the ${BUILD_AGENT} agent's reported results and the ${REVIEW_AGENT} agent's assessment
