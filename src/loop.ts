@@ -317,19 +317,19 @@ function summarizeToolCall(event: Extract<StreamEvent, { type: "tool" }>): strin
   if (tool === "grep" && input?.["pattern"]) {
     return `grep: ${input["pattern"]}`;
   }
-  if (tool === "task" && input?.["description"]) {
+  if (tool === "agent" && input?.["description"]) {
     const desc = String(input["description"]);
     const agent = input?.["subagent_type"]
       ? ` [${String(input["subagent_type"]).replace(/^marvin-/, "")}]`
       : "";
-    return `task${agent}: ${desc.slice(0, 50)}${desc.length > 50 ? "…" : ""}`;
+    return `agent${agent}: ${desc.slice(0, 50)}${desc.length > 50 ? "…" : ""}`;
   }
 
   return tool;
 }
 
 function toolPersonality(tool: string): string[] {
-  if (tool === "task") {
+  if (tool === "agent") {
     return personality.status.delegating;
   }
   if (["read", "glob", "grep"].includes(tool)) {

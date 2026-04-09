@@ -48,8 +48,9 @@ async function* parseStream(proc) {
                     const name = block["name"].toLowerCase();
                     const input = block["input"] ?? {};
                     const toolUseId = block["id"];
-                    // When the orchestrator calls Task, record the agent mapping
-                    if (name === "task" && toolUseId && input["subagent_type"]) {
+                    // When the orchestrator calls Agent, record the agent mapping.
+                    // Tool was renamed Task → Agent in Claude Code 2.1.63.
+                    if (name === "agent" && toolUseId && input["subagent_type"]) {
                         const agentName = String(input["subagent_type"]).replace(/^marvin-/, "");
                         taskAgents.set(toolUseId, { agent: agentName, model: "" });
                     }
