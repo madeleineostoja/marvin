@@ -157,7 +157,7 @@ function printDirtyTreeError(): void {
   ui.log(styleText("dim", "  git add -A && git commit  # to commit them"));
 }
 
-function parseExitStatus(output: string): "blocked" | "continue" {
+export function parseExitStatus(output: string): "blocked" | "continue" {
   const match = output.match(/<marvin>(\w+)<\/marvin>/);
   const status = match?.[1];
   if (status === "blocked") {
@@ -169,7 +169,7 @@ function parseExitStatus(output: string): "blocked" | "continue" {
 // Counts unchecked Markdown task list items (lines like `- [ ] ...` with optional indent).
 // The loop owns plan-completion detection — the orchestrator's only job is to commit one
 // task and exit, so we re-read the plan after each iteration to decide whether to stop.
-function countIncompleteTasks(planContent: string): number {
+export function countIncompleteTasks(planContent: string): number {
   const matches = planContent.match(/^[ \t]*-[ \t]+\[[ \t]\]/gm);
   return matches?.length ?? 0;
 }
@@ -315,7 +315,7 @@ function formatTokens(tokens: number): string {
   return `${(tokens / 1000).toFixed(1)}k tokens`;
 }
 
-function summarizeToolCall(event: Extract<StreamEvent, { type: "tool" }>): string {
+export function summarizeToolCall(event: Extract<StreamEvent, { type: "tool" }>): string {
   const tool = event.tool;
   const input = event.input;
 
