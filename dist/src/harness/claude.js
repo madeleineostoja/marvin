@@ -138,7 +138,7 @@ export function createClaudeHarness() {
                     },
                 }));
             }
-            args.push(`Execute the next iteration. Plan: ${config.planFile}`);
+            args.push(`Plan file: ${config.planFile}`);
             const proc = execa("claude", args, {
                 cwd: config.workspaceRoot,
                 cancelSignal: signal,
