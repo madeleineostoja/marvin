@@ -1,5 +1,8 @@
 import { execa } from "execa";
 import { createInterface } from "node:readline";
+import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import type {
   AgentInfo,
   Harness,
@@ -9,6 +12,33 @@ import type {
   StreamEvent,
 } from "./types.ts";
 import { claudeAgents, ORCHESTRATOR_PROMPT } from "../agents.ts";
+
+// Keys from ~/.claude/settings.json that are safe to inherit into marvin's
+// otherwise-isolated subprocess invocations. We pass `--setting-sources project`
+// to block the user's settings wholesale (see comment in invoke()), then
+// surgically reintroduce a tiny set here via `--settings`. Anything that
+// affects tool permissions, hooks, MCP, env vars, or models stays out —
+// marvin owns those.
+const INHERITABLE_USER_SETTINGS_KEYS = ["attribution"] as const;
+
+function loadInheritedUserSettings(): Record<string, unknown> {
+  const path = join(homedir(), ".claude", "settings.json");
+  if (!existsSync(path)) {
+    return {};
+  }
+  try {
+    const parsed = JSON.parse(readFileSync(path, "utf-8")) as Record<string, unknown>;
+    const inherited: Record<string, unknown> = {};
+    for (const key of INHERITABLE_USER_SETTINGS_KEYS) {
+      if (key in parsed) {
+        inherited[key] = parsed[key];
+      }
+    }
+    return inherited;
+  } catch {
+    return {};
+  }
+}
 
 
 
@@ -148,6 +178,7 @@ async function* parseStream(
 }
 
 export function createClaudeHarness(): Harness {
+  const inheritedUserSettings = loadInheritedUserSettings();
   return {
     name: "claude",
     invoke(
@@ -219,19 +250,18 @@ export function createClaudeHarness(): Harness {
         JSON.stringify(claudeAgents(config.models)),
       ];
 
+      const settingsPayload: Record<string, unknown> = { ...inheritedUserSettings };
       if (config.sandbox.enabled) {
-        args.push(
-          "--settings",
-          JSON.stringify({
-            sandbox: {
-              enabled: true,
-              autoAllowBashIfSandboxed: true,
-              network: {
-                allowedDomains: [...config.sandbox.domains],
-              },
-            },
-          }),
-        );
+        settingsPayload["sandbox"] = {
+          enabled: true,
+          autoAllowBashIfSandboxed: true,
+          network: {
+            allowedDomains: [...config.sandbox.domains],
+          },
+        };
+      }
+      if (Object.keys(settingsPayload).length > 0) {
+        args.push("--settings", JSON.stringify(settingsPayload));
       }
 
       args.push(`Plan file: ${config.planFile}`);
