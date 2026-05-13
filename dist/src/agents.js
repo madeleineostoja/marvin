@@ -64,7 +64,17 @@ Mark the task done in the plan file with the date. Add a brief note. Record any 
 
 ## Phase 7 — Commit and Exit
 
-Stage and commit with \`git add -A && git commit -m "type(scope): description"\`.
+Stage and commit with a lightweight Conventional Commits message: \`<type>: <brief description>\`, lowercase, imperative, no scope, no trailing period. Types: \`feat\`, \`fix\`, \`refactor\`, \`docs\`, \`test\`, \`chore\`. Add a body (after a blank line) ONLY if there is non-obvious context worth recording — motivation, a subtle gotcha, or a follow-up. Skip the body for routine changes; the diff already speaks for itself. Use a HEREDOC when including a body:
+
+\`\`\`
+git add -A && git commit -m "$(cat <<'EOF'
+fix: prevent worktree cleanup from racing the orchestrator exit
+
+The cleanup hook fired before the final commit flushed, leaving
+the plan file partially staged. Order the hook after exit.
+EOF
+)"
+\`\`\`
 
 If the commit is rejected by pre-commit hooks, delegate to the ${BUILD_AGENT} agent with the error output: "The pre-commit hook failed with the following error. Fix the issue and re-run the failing check to verify. Do NOT commit." Then re-attempt the commit. If it fails a second time, revert the plan file to its pre-iteration state (\`git checkout HEAD -- <plan-file>\`) so the task remains incomplete for the next invocation, then exit with \`<marvin>continue</marvin>\`.
 
