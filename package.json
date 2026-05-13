@@ -16,7 +16,6 @@
   ],
   "scripts": {
     "start": "node ./index.ts",
-    "prepare": "husky || true",
     "build": "tsc -p tsconfig.build.json",
     "check": "tsc --noEmit",
     "test": "node --experimental-strip-types --test test/unit/*.test.ts",

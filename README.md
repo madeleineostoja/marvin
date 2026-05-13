@@ -41,6 +41,15 @@ Requires Node.js >= 24 and pnpm.
 pnpm add -g github:madeleineostoja/marvin
 ```
 
+### Contributing
+
+If you're working on Marvin itself, activate the git hooks once after cloning so commits rebuild `dist/` automatically:
+
+```sh
+pnpm install
+pnpm exec husky
+```
+
 ## Usage
 
 ```sh
