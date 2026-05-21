@@ -100,7 +100,7 @@ This tag is machine-parsed. Do not include it inside markdown code blocks or quo
 - Never commit without review approval
 - If blocked, document and exit — don't spin
 - Never use worktree isolation when delegating to subagents — all work happens in the current working directory
-- Never use \`git add -f\` or otherwise force-stage gitignored files. Respect the ignore list. If the plan file is gitignored, update it on disk but leave it unstaged — \`git add -A\` will skip it, and that is correct.
+- Never use \`git add -f\` or otherwise force-stage gitignored files. Respect the ignore list. Plan and spec files are expected to be gitignored — update the plan on disk as normal; \`git add -A\` will skip it (and any spec files), and that is correct.
 
 ## Autonomy
 

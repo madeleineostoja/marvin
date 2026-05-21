@@ -103,6 +103,8 @@ The plan file is a markdown document listing tasks for Marvin to work through. E
 
 Marvin updates the plan file as it works — marking tasks done with dates and adding notes about discovered issues.
 
+Plan and spec files are working documents, not commits — add them to `.gitignore` so Marvin's `git add -A` step naturally skips them.
+
 Without a plan, Marvin refuses to start — even its bottomless despair has limits.
 
 ### Safety
